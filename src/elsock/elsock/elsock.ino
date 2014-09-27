@@ -1,70 +1,61 @@
 #include <SPI.h>
 #include <Ethernet.h>
-#include <SD.h>
 
-String ports[] = {
-  "nul", "one", "two", 
-  "thr", "fou", "fiv", 
-  "six", "sev", "eig", "nin"
+char ports[] = {
+  '0', '1', '2', 
+  '3', '4', '5', 
+  '6', '7', '8', '9'
 };
 
 byte status[] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  0, 0, 0, 
+  0, 0, 0, 
+  0, 0, 0, 
+  0
 };
 
-int portnum = 10;
+byte portnum = 10;
+
+byte i;
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 
   0xEF, 0xFE, 0xED 
 };
 
-IPAddress fallback_ip(141,60,125,4);
+char buf[60];
 
-IPAddress fallback_gateway(141,60,125,1);
-IPAddress fallback_subnet(255,255,255,0);
-
+IPAddress ip;
 String current_ip;
-
-File myFile;
 EthernetServer server(80);
 
 void setup(){
   /* configure pins */
-  for(int i = 0; i < portnum; i++){
+  for(i = 0; i < portnum; i++){
     pinMode(i, OUTPUT);
   }
   
   /* configure the serial connection */
   Serial.begin(9600);
-  
-  Serial.println("[setup()] Begin SD init ...");
-  pinMode(10, OUTPUT);
-  if (!SD.begin(4)){
-    Serial.println("[setup()] SD init failed");
-    exit();
-  }
-  Serial.println("[setup()] finished!");
 
   /* Ethernet config */
   Serial.println("[setup()] Trying to query configuration by using DHCP");
   if (Ethernet.begin(mac) == 0){
     Serial.println("[setup()] Failed to get DHCP-IP address");
-    Serial.println("... using fallback configuration instead");
-    Ethernet.begin(mac, fallback_ip, fallback_gateway, fallback_subnet);
+    exit();
   }
 
-  fallback_ip = Ethernet.localIP();
+  ip = Ethernet.localIP();
 
   /* set the current ip */
-  current_ip = String("");
-  for (byte b = 0; b < 4; b ++){
-    current_ip += String(fallback_ip[b], DEC);
-    if (b != 3 ) {
+  current_ip.reserve(16);
+  current_ip = "";
+  for (i = 0; i < 4; i++){
+    current_ip += ip[i];
+    if (i != 3) {
       current_ip += ".";
     }
   }
   
-  exit();
   Serial.print("[setup()] current IP: ");
   Serial.println(current_ip);
 
@@ -79,69 +70,45 @@ void exit(){
 void loop(){
   /* like the accept() library function from the BSD-Socketlib */
   EthernetClient client = server.available();
-  String path = String("");
 
   if(client){
-    String line = get_line(client);
-    Serial.println(line);
-    if (line.charAt(0) == 'G' && line.charAt(1) == 'E' && line.charAt(2) == 'T'){
-      if (line.charAt(4) == '/'){
-
-        int index = 5;
+    char path[11];
+    
+    /* setting buf to the request line */
+    get_line(client);
+    
+    if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
+        i = 5;
         char temp;
+        
         /* Get the Path of the request */
-        while((temp = line.charAt(index++)) != ' '){
-          path += temp;
+        while ((temp = buf[i]) != ' '){
+          path[i-5] = temp;
+          i++;
         }
-      }
+        path[i-5] = '\0';
     }
 
-    Serial.print("[server] path: ");
-    Serial.print('/'); 
+    Serial.print("[server] path: /");
     Serial.println(path);
 
-    if(!path.equals("")){
-      Serial.println("[server] sending webpage ...");
+    if(path[0] == '\0'){
+      Serial.println("[server] sending index ...");
       /* static content */
-      myFile = SD.open("index.htm");
-      if(myFile){
-        while(myFile.available()){
-          client.println(myFile.read());
-        }
-        myFile.close();
-      } 
-      else {
-        Serial.println("[server] Error opening index.css");
-      }
-      /* sending dynamic content */
       send_webpage(client);
-    } 
-    else if (!path.equals("main.css")) {
+    } else if (path[0] == 'm') {
       Serial.println("[server] sending css ...");
+      send_css(client);
 
-      /* send main.css to client */
-      myFile = SD.open("main.css");
-      if(myFile){
-        while(myFile.available()){
-          client.println(myFile.read());
-        }
-        myFile.close();
-      } 
-      else {
-        Serial.println("[server] Error opening main.css");
-      }
+    } else {
 
-    } 
-    else {
-
-      for (int i = 0; i < portnum; i++){
-        if(!path.compareTo(ports[i])){
+      for (i = 0; i < portnum; i++){
+        if(path[0] == ports[i]){
           /* Port found! */
 
           if(status[i]){
             digitalWrite(i, LOW);
-          } 
-          else {
+          } else {
             digitalWrite(i, HIGH);
           }
 
@@ -150,61 +117,101 @@ void loop(){
           break;
         }
       }
+      
+      send_back(client);
     }
 
     client.stop();
   }
 }
 
-String get_line(EthernetClient c){
-  String result = String("");
+void get_line(EthernetClient c){
+  i = 0;
   char temp;
+  
   while ((temp = c.read()) != '\n'){
-    result += temp;
+    buf[i++] = temp;
   }
+  buf[i] = '\0';
+}
 
-  /* debug */
-  Serial.print("[server:get_line()] ");
-  Serial.println(result);
+void send_css(EthernetClient c){
+  c.print(".button-link{ \npadding: 10px 15px;\n");
+  c.print("background: #4479BA; \ncolor: #FFF;\n");
+  c.print("border-radius: 4px; \nborder: solid 1px #20538D;\n");
+  c.print("}\n\n");
 
-  return result;
+  c.print(".button-link:hover, .button-link:focus {\n");
+  c.print("background: #356094;\n");
+  c.print("border: solid 1px #2A4E77;\n");
+  c.print("text-decoration: none;\n");
+  c.print("}");
 }
 
 void send_webpage(EthernetClient c){
-  c.print("<p>");
+  c.print("<!DOCTYPE html>\n");
+  c.print("<html lang=\"en\">\n");
+  c.print("<head>\n");
+  c.print("<meta charset=\"utf-8\">\n");
+  c.print("<title>Electrical network socket</title>\n");
+
+  c.print("<link href=\"main.css\" rel=\"stylesheet\" />\n");
+  c.print("</head>\n");
+
+  c.print("<body>\n<h2>Toggle the state of the ports by pressing the buttons below");
+  c.print("</h2>\n<br><br>\n<p>");
 
   /* Dynamic content */
-  for (int i = 1; i < 4; i++){
+  for (i = 1; i < 4; i++){
     c.print("<a class=\"button-link\" href=\"");
     c.print("http://");
     c.print(current_ip);
     c.print("/");
     c.print(ports[i]);
-    c.print("\">Socket 1</a>");
+    c.print("\">Socket ");
+    c.print(i);
+    c.print("</a>\n");
   }
-  c.print("<br></br></p><p>");
+  c.print("<br><br>\n</p><p>\n");
 
-  for (int i = 4; i < 7; i++){
+  for (i = 4; i < 7; i++){
     c.print("<a class=\"button-link\" href=\"");
     c.print("http://");
     c.print(current_ip);
     c.print("/");
     c.print(ports[i]);
-    c.print("\">Socket 1</a>");
+    c.print("\">Socket ");
+    c.print(i);
+    c.print("</a>\n");
   }
-  c.print("<br></br></p><p>");
+  c.print("<br><br>\n</p><p>\n");
 
-  for (int i = 7; i < 10; i++){
+  for (i = 7; i < 10; i++){
     c.print( "<a class=\"button-link\" href=\"");
     c.print("http://");
     c.print(current_ip);
     c.print("/");
     c.print(ports[i]);
-    c.print("\">Socket 1</a>");
+    c.print("\">Socket ");
+    c.print(i);
+    c.print("</a>\n");
   }
 
-  c.print("</p></body></html>");
+  c.print("</p>\n</body>\n</html>\n");
 }
 
+void send_back(EthernetClient c){
+  c.print("<!DOCTYPE html>\n");
+  c.print("<html lang=\"en\">\n");
+  c.print("<head>\n");
+  c.print("<meta charset=\"utf-8\">\n");
+  c.print("<title>Electrical network socket</title>\n");
 
-
+  c.print("<link href=\"main.css\" rel=\"stylesheet\" />\n");
+  c.print("</head>\n");
+  c.print("<body><br>\n");
+  c.print("<a class=\"button-link\" href=\"http://");
+  c.print(current_ip);
+  c.print("/\">back</a>");
+  c.print("</body>\n");
+}
