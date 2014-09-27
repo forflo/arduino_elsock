@@ -9,7 +9,7 @@ IPAddress fallback_ip(141,60,125,4);
 IPAddress fallback_gateway(141,60,125,1);
 IPAddress fallback_subnet(255,255,255,0);
 
-EthernetServer server(7878);
+EthernetServer server(80);
 boolean rcvd_msg = false;
 
 void setup(){
@@ -46,7 +46,10 @@ void loop(){
   String path = "";
   
   if(client){
+    Serial.println("1");
+
     String line = get_line(client);
+    Serial.println(line);
     if (line.charAt(0) == 'G' && line.charAt(1) == 'E' && line.charAt(2) == 'T'){
       if (line.charAt(4) == '/'){
         
@@ -58,6 +61,11 @@ void loop(){
         }
       }
     }
+    
+    
+    Serial.print("[server] path: ");
+    Serial.print(path);
+    Serial.println();
     
     for (int i = 0; i < portnum; i++){
       if(!path.compareTo(ports[i])){
@@ -81,6 +89,9 @@ String get_line(EthernetClient c){
   String result = "";
   char temp;
   while ((temp = c.read()) != '\n'){
+    Serial.print("get_line[]: ");
+    Serial.print(temp);
+    Serial.println();
     result += temp;
   }
   
