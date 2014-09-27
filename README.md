@@ -1,4 +1,4 @@
 arduino_elsock
 ==============
 
-http://arduino.cc/en/Reference/Ethernet
+http://piratepad.net/UFnN9QiHeK
