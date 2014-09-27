@@ -1,0 +1,38 @@
+.test a {
+    border-bottom: 1px solid #777777;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #333333;
+    border-top: 1px solid #000000;
+    color: #000000;
+    display: block;
+    height: 2.5em;
+    padding: 0 1em;
+    width: 5em;       
+    text-decoration: none;       
+}
+
+.test a:hover {
+    border-bottom: 1px solid #777777;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #333333;
+    border-top: 1px solid #000000;
+    color: #f0f;
+    display: block;
+    height: 2.5em;
+    padding: 0 1em;
+    width: 5em;       
+    text-decoration: none;       
+}
+
+.test a:active {
+    border-bottom: 1px solid #777777;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #333333;
+    border-top: 1px solid #000000;
+    color: #f00;
+    display: block;
+    height: 2.5em;
+    padding: 0 1em;
+    width: 5em;       
+    text-decoration: none;       
+}
