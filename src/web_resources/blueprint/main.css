@@ -1,4 +1,4 @@
-.aesock a {
+.test a {
     border-bottom: 1px solid #777777;
     border-left: 1px solid #000000;
     border-right: 1px solid #333333;
@@ -11,7 +11,7 @@
     text-decoration: none;       
 }
 
-.aesock a:hover {
+.test a:hover {
     border-bottom: 1px solid #777777;
     border-left: 1px solid #000000;
     border-right: 1px solid #333333;
@@ -24,7 +24,7 @@
     text-decoration: none;       
 }
 
-.aesock a:active {
+.test a:active {
     border-bottom: 1px solid #777777;
     border-left: 1px solid #000000;
     border-right: 1px solid #333333;
