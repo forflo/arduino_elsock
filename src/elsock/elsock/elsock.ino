@@ -76,6 +76,8 @@ void loop(){
     
     /* setting buf to the request line */
     get_line(client);
+    Serial.print("[server:buf[]] ");
+    Serial.println(buf);
     
     if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
         i = 5;
@@ -215,7 +217,7 @@ void send_webpage(EthernetClient c){
     if(status[i]){
       c.print("\" style=\"color:#00FF00\">");
     } else {
-      c.print("\" style=\"color:#FF0000\">");
+      c.print("\" style=\"color:#961C1C\">");
     }
     c.print("Socket ");
     c.print(i);
