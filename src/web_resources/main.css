@@ -1,14 +1,14 @@
 .button-link {
     padding: 10px 15px;
-    background: #4479BA;
+    background: #808080;
     color: #FFF;
     border-radius: 4px;
-    border: solid 1px #20538D;
+    border: solid 1px #000000;
 }
 
 .button-link:hover, .button-link:focus {
-    background: #356094;
-    border: solid 1px #2A4E77;
+    background: #4E4E4E;
+    border: solid 1px #000000;
     text-decoration: none;
 }
 

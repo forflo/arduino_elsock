@@ -124,7 +124,7 @@ void loop(){
         }
       }
       
-      client.println("HTTP/1.1 301 OK\n");
+      client.print("HTTP/1.1 301 OK\n");
       client.print("Location: http://");
       client.print(current_ip); client.print("/\n");
       client.print("Connection: close\n\n");
@@ -181,13 +181,13 @@ void send_status(EthernetClient c){
 
 void send_css(EthernetClient c){
   c.print(".button-link{ \npadding: 10px 15px;\n");
-  c.print("background: #4479BA; \ncolor: #FFF;\n");
-  c.print("border-radius: 4px; \nborder: solid 1px #20538D;\n");
+  c.print("background: #808080; \ncolor: #FFF;\n");
+  c.print("border-radius: 4px; \nborder: solid 1px #000000;\n");
   c.print("}\n\n");
 
   c.print(".button-link:hover, .button-link:focus {\n");
-  c.print("background: #356094;\n");
-  c.print("border: solid 1px #2A4E77;\n");
+  c.print("background: #4E4E4E;\n");
+  c.print("border: solid 1px #000000;\n");
   c.print("text-decoration: none;\n");
   c.print("}");
 }
