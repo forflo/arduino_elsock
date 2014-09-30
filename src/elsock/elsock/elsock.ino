@@ -2,9 +2,9 @@
 #include <Ethernet.h>
 
 char ports[] = {
-  '0', '1', '2', 
-  '3', '4', '5', 
-  '6', '7', '8', '9'
+  'a', 'b', 'c', 
+  'd', 'e', 'f', 
+  'g', 'h', 'i', 'j'
 };
 
 byte status[] = {
@@ -72,12 +72,10 @@ void loop(){
   EthernetClient client = server.available();
 
   if(client){
-    char path[11];
+    char path[12];
     
     /* setting buf to the request line */
     get_line(client);
-    Serial.print("[server:buf[]] ");
-    Serial.println(buf);
     
     if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
         i = 5;
@@ -213,11 +211,11 @@ void send_webpage(EthernetClient c){
     c.print("http://");
     c.print(current_ip);
     c.print("/");
-    c.print(ports[i]);
+    c.print(ports[i]); c.print("musch");
     if(status[i]){
       c.print("\" style=\"color:#00FF00\">");
     } else {
-      c.print("\" style=\"color:#961C1C\">");
+      c.print("\" style=\"color:#FF0000\">");
     }
     c.print("Socket ");
     c.print(i);
