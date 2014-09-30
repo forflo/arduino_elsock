@@ -95,13 +95,19 @@ void loop(){
     if(path[0] == '\0'){
       Serial.println("[server] sending index ...");
       /* static content */
+      client.println("HTTP/1.1 200 OK\n");
       send_webpage(client);
     } else if (path[0] == 'm') {
       Serial.println("[server] sending css ...");
+      
+      client.println("HTTP/1.1 200 OK\n");
       send_css(client);
-
+    } else if (path[0] == 's') {
+      Serial.println("[server] sending status page ...");
+      client.println("HTTP/1.1 200 OK\n");
+      send_status(client);
     } else {
-
+      
       for (i = 0; i < portnum; i++){
         if(path[0] == ports[i]){
           /* Port found! */
@@ -118,9 +124,12 @@ void loop(){
         }
       }
       
-      send_back(client);
+      client.println("HTTP/1.1 301 OK\n");
+      client.print("Location: http://");
+      client.print(current_ip); client.print("/\n");
+      client.print("Connection: close\n\n");
     }
-
+    
     client.stop();
   }
 }
@@ -133,6 +142,41 @@ void get_line(EthernetClient c){
     buf[i++] = temp;
   }
   buf[i] = '\0';
+}
+
+void send_status(EthernetClient c){
+  c.print("<!DOCTYPE html>\n");
+  c.print("<html lang=\"en\">\n");
+  c.print("<head>\n");
+  c.print("<meta charset=\"utf-8\">\n");
+  c.print("<title>Status</title>\n");
+
+  c.print("<link href=\"main.css\" rel=\"stylesheet\" />\n");
+  c.print("</head>\n");
+
+  c.print("<body>");
+  
+  /* Dynamic content */
+  for (i = 1; i < 10; i++){
+    c.print("<p class=\"button-link\"");
+    
+    if(status[i]){
+      c.print(" style=\"color:#00FF00\">");
+    } else {
+      c.print(" style=\"color:#FF0000\">");
+    }
+    c.print("Socket ");
+    c.print(i);
+    
+    if(status[i]){
+      c.print(" = On");
+    } else {
+      c.print(" = Off");
+    }
+    c.print("</p>");
+  }
+
+  c.print("</body>");
 }
 
 void send_css(EthernetClient c){
@@ -162,56 +206,38 @@ void send_webpage(EthernetClient c){
   c.print("</h2>\n<br><br>\n<p>");
 
   /* Dynamic content */
-  for (i = 1; i < 4; i++){
+  for (i = 1; i < 10; i++){
     c.print("<a class=\"button-link\" href=\"");
     c.print("http://");
     c.print(current_ip);
     c.print("/");
     c.print(ports[i]);
-    c.print("\">Socket ");
+    if(status[i]){
+      c.print("\" style=\"color:#00FF00\">");
+    } else {
+      c.print("\" style=\"color:#FF0000\">");
+    }
+    c.print("Socket ");
     c.print(i);
+    
+    if(status[i]){
+      c.print(" = On");
+    } else {
+      c.print(" = Off");
+    }
+    
     c.print("</a>\n");
+
+    if(i%3==0){
+      c.print("<br><br>\n</p><p>\n");
+    }
   }
+  
   c.print("<br><br>\n</p><p>\n");
-
-  for (i = 4; i < 7; i++){
-    c.print("<a class=\"button-link\" href=\"");
-    c.print("http://");
-    c.print(current_ip);
-    c.print("/");
-    c.print(ports[i]);
-    c.print("\">Socket ");
-    c.print(i);
-    c.print("</a>\n");
-  }
-  c.print("<br><br>\n</p><p>\n");
-
-  for (i = 7; i < 10; i++){
-    c.print( "<a class=\"button-link\" href=\"");
-    c.print("http://");
-    c.print(current_ip);
-    c.print("/");
-    c.print(ports[i]);
-    c.print("\">Socket ");
-    c.print(i);
-    c.print("</a>\n");
-  }
-
-  c.print("</p>\n</body>\n</html>\n");
-}
-
-void send_back(EthernetClient c){
-  c.print("<!DOCTYPE html>\n");
-  c.print("<html lang=\"en\">\n");
-  c.print("<head>\n");
-  c.print("<meta charset=\"utf-8\">\n");
-  c.print("<title>Electrical network socket</title>\n");
-
-  c.print("<link href=\"main.css\" rel=\"stylesheet\" />\n");
-  c.print("</head>\n");
-  c.print("<body><br>\n");
   c.print("<a class=\"button-link\" href=\"http://");
   c.print(current_ip);
-  c.print("/\">back</a>");
-  c.print("</body>\n");
+  c.print("/");
+  c.print("status\">Status</a>\n");
+
+  c.print("</p>\n</body>\n</html>\n");
 }
