@@ -100,7 +100,8 @@ void loop(){
     } else if (path[0] == 'm') {
       Serial.println("[server] sending css ...");
       
-      client.println("HTTP/1.1 200 OK\n");
+      client.print("HTTP/1.1 200 OK\n");
+      client.println("Content-Type: text/css; charset=iso-8859-1\n");
       send_css(client);
     } else if (path[0] == 's') {
       Serial.println("[server] sending status page ...");
@@ -124,7 +125,7 @@ void loop(){
         }
       }
       
-      client.print("HTTP/1.1 301 OK\n");
+      client.print("HTTP/1.1 302 Found\n");
       client.print("Location: http://");
       client.print(current_ip); client.print("/\n");
       client.print("Connection: close\n\n");
