@@ -122,32 +122,47 @@ void loop(){
 				} else {
 					temp_buf[temp_buf_i] = '\0';
 					temp_buf_i = 0;
+					i++;
 					/* Now digest the query */
 					if(temp_buf[0] == 'l' && temp_buf[1] == 'e' && temp_buf[2] == 'd' && 
 							temp_buf[4] == '='){
 						if(temp_buf[5] == '1'){
 							/* Switch on the appropriate socket */
-							for (j = 0; j < portnum; j++){
-								if(path[0] == ports[j]){
-									/* Port found! */
-
+							if(temp_buf[3] == 'A'){
+								for (j = 0; j < portnum; j++){ 
 									digitalWrite(j, HIGH);
-
 									status[j] = 1;
-									break;
+								}
+							} else {
+								for (j = 0; j < portnum; j++){
+									if(temp_buf[3] == ports[j]){
+										/* Port found! */
+
+										digitalWrite(j, HIGH);
+
+										status[j] = 1;
+										break;
+									}
 								}
 							}
 
 						} else if (temp_buf[5] == '0') {
-							/* Switch off the appropriate socket */
-							for (j = 0; j < portnum; j++){
-								jf(path[0] == ports[j]){
-									/* Port found! */
-
-									djgjtalWrjte(j, LOW);
-
+							if(temp_buf[3] == 'A'){
+								for (j = 0; j < portnum; j++){ 
+									digitalWrite(j, LOW);
 									status[j] = 0;
-									break;
+								}
+							} else {
+								/* Switch off the appropriate socket */
+								for (j = 0; j < portnum; j++){
+									jf(path[0] == ports[j]){
+										/* Port found! */
+
+										djgjtalWrjte(j, LOW);
+
+										status[j] = 0;
+										break;
+									}
 								}
 							}
 
