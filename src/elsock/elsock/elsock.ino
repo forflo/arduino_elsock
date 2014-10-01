@@ -134,9 +134,9 @@ void loop(){
       byte state, led, t, k;
 
       Serial.println("[server] Start parsing HTTP query string ...");
-      
+
       /* note that only case '1' and case '0' contain the continue statement
-        This is used to control the code block after the switch case statement */
+       This is used to control the code block after the switch case statement */
       while ((t = path[i++]) != '\0'){
         switch(t){
         case 'L':
@@ -192,6 +192,10 @@ void loop(){
         case '1':
           state = HIGH; 
           break;
+          /* This means: "toggle all" */
+        case 't':
+          state = 't';
+          break;
         default:
           continue;
           break;
@@ -199,13 +203,25 @@ void loop(){
 
         if(led == 100){
           for(k=0; k<portnum; k++){
-            digitalWrite(k, state);
-            status[k] = state;
+            /* decide if the "toggle mode" is switched on */
+            if(state == 't'){
+              status[k] = !status[k];
+              digitalWrite(k, status[k]);
+            } 
+            else {
+              digitalWrite(k, state);
+              status[k] = state;
+            }
           }
-        } 
-        else { 
-          digitalWrite(led, state);
-          status[led] = state == HIGH ? 1 : 0;
+        } else { 
+          if(state == 't'){
+            status[led] = !status[led];
+            digitalWrite(led, status[led]);
+          } 
+          else {
+            digitalWrite(led, state);
+            status[led] = state == HIGH ? 1 : 0;
+          }
         }
       }
     } 
@@ -351,7 +367,3 @@ void send_webpage(EthernetClient c){
 
   c.print("</p>\n</body>\n</html>\n");
 }
-
-
-
-
