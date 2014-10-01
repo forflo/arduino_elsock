@@ -107,6 +107,8 @@ void loop(){
       Serial.println("[server] sending status page ...");
       client.println("HTTP/1.1 200 OK\n");
       send_status(client);
+    } else if (path[0] == 'q' && path[1] == '?') {
+      /* Todo: Query-Strings parsen */
     } else {
       
       for (i = 0; i < portnum; i++){
