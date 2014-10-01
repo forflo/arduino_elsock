@@ -29,37 +29,37 @@ String current_ip;
 EthernetServer server(80);
 
 void setup(){
-  /* configure pins */
-  for(i = 0; i < portnum; i++){
-    pinMode(i, OUTPUT);
-  }
-  
-  /* configure the serial connection */
-  Serial.begin(9600);
+	/* configure pins */
+	for(i = 0; i < portnum; i++){
+		pinMode(i, OUTPUT);
+	}
 
-  /* Ethernet config */
-  Serial.println("[setup()] Trying to query configuration by using DHCP");
-  if (Ethernet.begin(mac) == 0){
-    Serial.println("[setup()] Failed to get DHCP-IP address");
-    exit();
-  }
+	/* configure the serial connection */
+	Serial.begin(9600);
 
-  ip = Ethernet.localIP();
+	/* Ethernet config */
+	Serial.println("[setup()] Trying to query configuration by using DHCP");
+	if (Ethernet.begin(mac) == 0){
+		Serial.println("[setup()] Failed to get DHCP-IP address");
+		exit();
+	}
 
-  /* set the current ip */
-  current_ip.reserve(16);
-  current_ip = "";
-  for (i = 0; i < 4; i++){
-    current_ip += ip[i];
-    if (i != 3) {
-      current_ip += ".";
-    }
-  }
-  
-  Serial.print("[setup()] current IP: ");
-  Serial.println(current_ip);
+	ip = Ethernet.localIP();
 
-  server.begin();
+	/* set the current ip */
+	current_ip.reserve(16);
+	current_ip = "";
+	for (i = 0; i < 4; i++){
+		current_ip += ip[i];
+		if (i != 3) {
+			current_ip += ".";
+		}
+	}
+
+	Serial.print("[setup()] current IP: ");
+	Serial.println(current_ip);
+
+	server.begin();
 }
 
 void exit(){
@@ -68,73 +68,136 @@ void exit(){
 }
 
 void loop(){
-  /* like the accept() library function from the BSD-Socketlib */
-  EthernetClient client = server.available();
+	/* like the accept() library function from the BSD-Socketlib */
+	EthernetClient client = server.available();
 
-  if(client){
-    char path[12];
-    
-    /* setting buf to the request line */
-    get_line(client);
-    
-    if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
-        i = 5;
-        char temp;
-        
-        /* Get the Path of the request */
-        while ((temp = buf[i]) != ' '){
-          path[i-5] = temp;
-          i++;
-        }
-        path[i-5] = '\0';
-    }
+	if(client){
+		char path[12];
 
-    Serial.print("[server] path: /");
-    Serial.println(path);
+		/* setting buf to the request line */
+		get_line(client);
 
-    if(path[0] == '\0'){
-      Serial.println("[server] sending index ...");
-      /* static content */
-      client.println("HTTP/1.1 200 OK\n");
-      send_webpage(client);
-    } else if (path[0] == 'm') {
-      Serial.println("[server] sending css ...");
-      
-      client.print("HTTP/1.1 200 OK\n");
-      client.println("Content-Type: text/css; charset=iso-8859-1\n");
-      send_css(client);
-    } else if (path[0] == 's') {
-      Serial.println("[server] sending status page ...");
-      client.println("HTTP/1.1 200 OK\n");
-      send_status(client);
-    } else if (path[0] == 'q' && path[1] == '?') {
-      /* Todo: Query-Strings parsen */
-    } else {
-      
-      for (i = 0; i < portnum; i++){
-        if(path[0] == ports[i]){
-          /* Port found! */
+		if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
+			i = 5;
+			char temp;
 
-          if(status[i]){
-            digitalWrite(i, LOW);
-          } else {
-            digitalWrite(i, HIGH);
-          }
+			/* Get the Path of the request */
+			while ((temp = buf[i]) != ' '){
+				path[i-5] = temp;
+				i++;
+			}
+			path[i-5] = '\0';
+		}
 
-          status[i] = !status[i];
+		Serial.print("[server] path: /");
+		Serial.println(path);
 
-          break;
-        }
-      }
-      
-      client.print("HTTP/1.1 302 Found\n");
-      client.print("Location: http://");
-      client.print(current_ip); client.print("/\n");
-      client.print("Connection: close\n\n");
-    }
-    
-    client.stop();
-  }
+		if(path[0] == '\0'){
+			Serial.println("[server] sending index ...");
+			/* static content */
+			client.println("HTTP/1.1 200 OK\n");
+			send_webpage(client);
+		} else if (path[0] == 'm') {
+			Serial.println("[server] sending css ...");
+
+			client.print("HTTP/1.1 200 OK\n");
+			client.println("Content-Type: text/css; charset=iso-8859-1\n");
+			send_css(client);
+		} else if (path[0] == 's') {
+			Serial.println("[server] sending status page ...");
+			client.println("HTTP/1.1 200 OK\n");
+			send_status(client);
+
+		} else if (path[0] == 'q' && path[1] == '?') {
+			/* utterly disgusting code starts now! */
+			i = 2;
+			byte j;
+			byte temp_buf_i = 0;
+			char temp_buf[7];
+
+			Serial.println("[server] Start parsing HTTP query string ...");
+			while (path[i] != '\0'){
+				if(path[i] != '&' && temp_buf_i < 6){
+					temp_buf[temp_buf_i++] = path[i++]; 
+				} else {
+					temp_buf[temp_buf_i] = '\0';
+					temp_buf_i = 0;
+					i++;
+					/* Now digest the query */
+					if(temp_buf[0] == 'l' && temp_buf[1] == 'e' && temp_buf[2] == 'd' && 
+							temp_buf[4] == '='){
+						if(temp_buf[5] == '1'){
+							/* Switch on the appropriate socket */
+							if(temp_buf[3] == 'A'){
+								for (j = 0; j < portnum; j++){ 
+									digitalWrite(j, HIGH);
+									status[j] = 1;
+								}
+							} else {
+								for (j = 0; j < portnum; j++){
+									if(temp_buf[3] == ports[j]){
+										/* Port found! */
+
+										digitalWrite(j, HIGH);
+
+										status[j] = 1;
+										break;
+									}
+								}
+							}
+
+						} else if (temp_buf[5] == '0') {
+							if(temp_buf[3] == 'A'){
+								for (j = 0; j < portnum; j++){ 
+									digitalWrite(j, LOW);
+									status[j] = 0;
+								}
+							} else {
+								/* Switch off the appropriate socket */
+								for (j = 0; j < portnum; j++){
+									jf(path[0] == ports[j]){
+										/* Port found! */
+
+										djgjtalWrjte(j, LOW);
+
+										status[j] = 0;
+										break;
+									}
+								}
+							}
+
+						} else {
+							/* doing just nothing is intended here! */
+						}
+					}
+				}
+			}
+		} else {
+
+			for (i = 0; i < portnum; i++){
+				if(path[0] == ports[i]){
+					/* Port found! */
+
+					if(status[i]){
+						digitalWrite(i, LOW);
+					} else {
+						digitalWrite(i, HIGH);
+					}
+
+					status[i] = !status[i];
+
+					break;
+				}
+			}
+
+			client.print("HTTP/1.1 302 Found\n");
+			client.print("Location: http://");
+			client.print(current_ip); client.print("/\n");
+			client.print("Connection: close\n\n");
+		}
+
+		client.stop();
+	}
 }
 
 void get_line(EthernetClient c){
