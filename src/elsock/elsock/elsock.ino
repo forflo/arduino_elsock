@@ -2,64 +2,82 @@
 #include <Ethernet.h>
 
 char ports[] = {
-  'a', 'b', 'c', 
-  'd', 'e', 'f', 
+  'a', 'b', 'c',
+  'd', 'e', 'f',
   'g', 'h', 'i', 'j'
 };
 
 byte status[] = {
   0, 0, 0, 
   0, 0, 0, 
-  0, 0, 0, 
-  0
+  0, 0, 0, 0
 };
 
-byte portnum = 10;
-
-byte i;
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 
   0xEF, 0xFE, 0xED 
 };
 
-char buf[60];
+byte portnum = 10;
 
-IPAddress ip;
-String current_ip;
+byte i;
+
+char buf[60];
+char current_ip[16];
+
 EthernetServer server(80);
 
 void setup(){
-	/* configure pins */
-	for(i = 0; i < portnum; i++){
-		pinMode(i, OUTPUT);
-	}
+  int current_byte = 0, cip_cnt = 0, cip_i = 0;
+  /* configure pins */
+  for(i = 0; i < portnum; i++){
+    pinMode(i, OUTPUT);
+  }
 
-	/* configure the serial connection */
-	Serial.begin(9600);
+  /* configure the serial connection */
+  Serial.begin(9600);
 
-	/* Ethernet config */
-	Serial.println("[setup()] Trying to query configuration by using DHCP");
-	if (Ethernet.begin(mac) == 0){
-		Serial.println("[setup()] Failed to get DHCP-IP address");
-		exit();
-	}
+  /* Ethernet config */
+  Serial.println("[setup()] Trying to query configuration by using DHCP");
+  if (Ethernet.begin(mac) == 0){
+    Serial.println("[setup()] Failed to get DHCP-IP address");
+    exit();
+  }
 
-	ip = Ethernet.localIP();
+  IPAddress ip = Ethernet.localIP();
 
-	/* set the current ip */
-	current_ip.reserve(16);
-	current_ip = "";
-	for (i = 0; i < 4; i++){
-		current_ip += ip[i];
-		if (i != 3) {
-			current_ip += ".";
-		}
-	}
+  /* set the current ip */
+  for (i = 0; i < 4; i++){
+    current_byte = ip[i];
+    if(current_byte > 99){ 
+      cip_i = 2 + cip_cnt;
+      cip_cnt += 3;
+    } 
+    else if (current_byte > 9) {
+      cip_i = 1 + cip_cnt;
+      cip_cnt += 2;
+    } 
+    else {
+      cip_i = 0 + cip_cnt;
+      cip_cnt++;
+    }
 
-	Serial.print("[setup()] current IP: ");
-	Serial.println(current_ip);
+    if (i != 3) {
+      cip_cnt++;
+      current_ip[cip_i + 1] = '.';
+    }
 
-	server.begin();
+    while(current_byte){
+      current_ip[cip_i--] = '0' + (current_byte % 10);
+      current_byte /= 10;
+    }
+  }
+  current_ip[cip_cnt] = '\0';
+
+  Serial.print("[setup()] current IP: ");
+  Serial.println(current_ip);
+
+  server.begin();
 }
 
 void exit(){
@@ -68,142 +86,163 @@ void exit(){
 }
 
 void loop(){
-	/* like the accept() library function from the BSD-Socketlib */
-	EthernetClient client = server.available();
+  /* like the accept() library function from the BSD-Socketlib */
+  EthernetClient client = server.available();
 
-	if(client){
-		char path[12];
+  if(client){
+    char path[43]; /* client dispatching */
 
-		/* setting buf to the request line */
-		get_line(client);
+    /* setting buf to the request line */
+    get_line(client);
 
-		if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
-			i = 5;
-			char temp;
+    if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
+      i = 5;
+      char temp;
 
-			/* Get the Path of the request */
-			while ((temp = buf[i]) != ' '){
-				path[i-5] = temp;
-				i++;
-			}
-			path[i-5] = '\0';
-		}
+      /* Get the Path of the request */
+      while ((temp = buf[i]) != ' '){
+        path[i-5] = temp;
+        i++;
+      }
+      path[i-5] = '\0';
+    }
 
-		Serial.print("[server] path: /");
-		Serial.println(path);
+    Serial.print("[server] path: /");
+    Serial.println(path);
 
-		if(path[0] == '\0'){
-			Serial.println("[server] sending index ...");
-			/* static content */
-			client.println("HTTP/1.1 200 OK\n");
-			send_webpage(client);
-		} else if (path[0] == 'm') {
-			Serial.println("[server] sending css ...");
+    if(path[0] == '\0'){
+      Serial.println("[server] sending index ...");
+      /* static content */
+      client.println("HTTP/1.1 200 OK\n");
+      send_webpage(client);
+    } 
+    else if (path[0] == 'm') {
+      Serial.println("[server] sending css ...");
 
-			client.print("HTTP/1.1 200 OK\n");
-			client.println("Content-Type: text/css; charset=iso-8859-1\n");
-			send_css(client);
-		} else if (path[0] == 's') {
-			Serial.println("[server] sending status page ...");
-			client.println("HTTP/1.1 200 OK\n");
-			send_status(client);
+      client.print("HTTP/1.1 200 OK\n");
+      client.println("Content-Type: text/css; charset=iso-8859-1\n");
+      send_css(client);
+    } 
+    else if (path[0] == 's') {
+      Serial.println("[server] sending status page ...");
+      client.println("HTTP/1.1 200 OK\n");
+      send_status(client);
 
-		} else if (path[0] == 'q' && path[1] == '?') {
-			/* utterly disgusting code starts now! */
-			i = 2;
-			byte j;
-			byte temp_buf_i = 0;
-			char temp_buf[7];
+    } 
+    else if (path[0] == 'q' && path[1] == '?') {
+      i = 2;
+      byte state, led, t, k;
 
-			Serial.println("[server] Start parsing HTTP query string ...");
-			while (path[i] != '\0'){
-				if(path[i] != '&' && temp_buf_i < 6){
-					temp_buf[temp_buf_i++] = path[i++]; 
-				} else {
-					temp_buf[temp_buf_i] = '\0';
-					temp_buf_i = 0;
-					i++;
-					/* Now digest the query */
-					if(temp_buf[0] == 'l' && temp_buf[1] == 'e' && temp_buf[2] == 'd' && 
-							temp_buf[4] == '='){
-						if(temp_buf[5] == '1'){
-							/* Switch on the appropriate socket */
-							if(temp_buf[3] == 'A'){
-								for (j = 0; j < portnum; j++){ 
-									digitalWrite(j, HIGH);
-									status[j] = 1;
-								}
-							} else {
-								for (j = 0; j < portnum; j++){
-									if(temp_buf[3] == ports[j]){
-										/* Port found! */
+      Serial.println("[server] Start parsing HTTP query string ...");
+      
+      /* note that only case '1' and case '0' contain the continue statement
+        This is used to control the code block after the switch case statement */
+      while ((t = path[i++]) != '\0'){
+        switch(t){
+        case 'L':
+          continue;
+          break;
+        case 'a':
+          led = 0; 
+          continue;
+          break;
+        case 'b':
+          led = 1; 
+          continue;
+          break;
+        case 'c':
+          led = 2; 
+          continue;
+          break;
+        case 'd':
+          led = 3; 
+          continue;
+          break;
+        case 'e':
+          led = 4; 
+          continue;
+          break;
+        case 'f':
+          led = 5; 
+          continue;
+          break;
+        case 'g':
+          led = 6; 
+          continue;
+          break;
+        case 'h':
+          led = 7; 
+          continue;
+          break;
+        case 'i':
+          led = 8; 
+          continue;
+          break;
+        case 'j':
+          led = 9;
+          continue;
+          break;
+        case 'A':
+          led = 100;
+          continue;
+          break;
+        case '0':
+          state = LOW; 
+          break;
+        case '1':
+          state = HIGH; 
+          break;
+        default:
+          continue;
+          break;
+        }
 
-										digitalWrite(j, HIGH);
+        if(led == 100){
+          for(k=0; k<portnum; k++){
+            digitalWrite(k, state);
+            status[k] = state;
+          }
+        } 
+        else { 
+          digitalWrite(led, state);
+          status[led] = state == HIGH ? 1 : 0;
+        }
+      }
+    } 
+    else {
 
-										status[j] = 1;
-										break;
-									}
-								}
-							}
+      for (i = 0; i < portnum; i++){
+        if(path[0] == ports[i]){
+          /* Port found! */
 
-						} else if (temp_buf[5] == '0') {
-							if(temp_buf[3] == 'A'){
-								for (j = 0; j < portnum; j++){ 
-									digitalWrite(j, LOW);
-									status[j] = 0;
-								}
-							} else {
-								/* Switch off the appropriate socket */
-								for (j = 0; j < portnum; j++){
-									jf(path[0] == ports[j]){
-										/* Port found! */
+          if(status[i]){
+            digitalWrite(i, LOW);
+          } 
+          else {
+            digitalWrite(i, HIGH);
+          }
 
-										djgjtalWrjte(j, LOW);
+          status[i] = !status[i];
 
-										status[j] = 0;
-										break;
-									}
-								}
-							}
+          break;
+        }
+      }
 
-						} else {
-							/* doing just nothing is intended here! */
-						}
-					}
-				}
-			}
-		} else {
+      client.print("HTTP/1.1 302 Found\n");
+      client.print("Location: http://");
+      client.print(current_ip); 
+      client.print("/\n");
+      client.print("Connection: close\n\n");
+    }
 
-			for (i = 0; i < portnum; i++){
-				if(path[0] == ports[i]){
-					/* Port found! */
-
-					if(status[i]){
-						digitalWrite(i, LOW);
-					} else {
-						digitalWrite(i, HIGH);
-					}
-
-					status[i] = !status[i];
-
-					break;
-				}
-			}
-
-			client.print("HTTP/1.1 302 Found\n");
-			client.print("Location: http://");
-			client.print(current_ip); client.print("/\n");
-			client.print("Connection: close\n\n");
-		}
-
-		client.stop();
-	}
+    client.stop();
+  }
 }
 
 void get_line(EthernetClient c){
   i = 0;
   char temp;
-  
+
   while ((temp = c.read()) != '\n'){
     buf[i++] = temp;
   }
@@ -221,22 +260,24 @@ void send_status(EthernetClient c){
   c.print("</head>\n");
 
   c.print("<body>");
-  
+
   /* Dynamic content */
   for (i = 1; i < 10; i++){
     c.print("<p class=\"button-link\"");
-    
+
     if(status[i]){
       c.print(" style=\"color:#00FF00\">");
-    } else {
+    } 
+    else {
       c.print(" style=\"color:#FF0000\">");
     }
     c.print("Socket ");
     c.print(i);
-    
+
     if(status[i]){
       c.print(" = On");
-    } else {
+    } 
+    else {
       c.print(" = Off");
     }
     c.print("</p>");
@@ -277,28 +318,31 @@ void send_webpage(EthernetClient c){
     c.print("http://");
     c.print(current_ip);
     c.print("/");
-    c.print(ports[i]); c.print("musch");
+    c.print(ports[i]); 
+    c.print("musch");
     if(status[i]){
       c.print("\" style=\"color:#00FF00\">");
-    } else {
+    } 
+    else {
       c.print("\" style=\"color:#FF0000\">");
     }
     c.print("Socket ");
     c.print(i);
-    
+
     if(status[i]){
       c.print(" = On");
-    } else {
+    } 
+    else {
       c.print(" = Off");
     }
-    
+
     c.print("</a>\n");
 
     if(i%3==0){
       c.print("<br><br>\n</p><p>\n");
     }
   }
-  
+
   c.print("<br><br>\n</p><p>\n");
   c.print("<a class=\"button-link\" href=\"http://");
   c.print(current_ip);
@@ -307,3 +351,7 @@ void send_webpage(EthernetClient c){
 
   c.print("</p>\n</body>\n</html>\n");
 }
+
+
+
+
