@@ -285,7 +285,7 @@ void send_status(EthernetClient c){
       c.print(" style=\"color:#00FF00\">");
     } 
     else {
-      c.print(" style=\"color:#FF0000\">");
+      c.print(" style=\"color:#000000\">");
     }
     c.print("Socket ");
     c.print(i);
@@ -305,7 +305,7 @@ void send_status(EthernetClient c){
 void send_css(EthernetClient c){
   c.print(".button-link{ \npadding: 10px 15px;\n");
   c.print("background: #808080; \ncolor: #FFF;\n");
-  c.print("border-radius: 4px; \nborder: solid 1px #000000;\n");
+  c.print("border: solid 1px #000000;\n");
   c.print("}\n\n");
 
   c.print(".button-link:hover, .button-link:focus {\n");
@@ -340,7 +340,7 @@ void send_webpage(EthernetClient c){
       c.print("\" style=\"color:#00FF00\">");
     } 
     else {
-      c.print("\" style=\"color:#FF0000\">");
+      c.print("\" style=\"color:#000000\">");
     }
     c.print("Socket ");
     c.print(i);
