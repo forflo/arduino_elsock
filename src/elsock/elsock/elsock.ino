@@ -18,15 +18,23 @@ byte mac[] = {
   0xEF, 0xFE, 0xED 
 };
 
+/* number of elements in ports[] */
 byte portnum = 10;
 
 byte i;
 
+/* used by the function get_line() */
 char buf[60];
 char current_ip[16];
 
+/* Arduino will listen on port 80 */
 EthernetServer server(80);
 
+/* This function configures the
+  - pins
+  - the serial line
+  - the network stack (using dhcp)
+  - and sets the global variable current ip */
 void setup(){
   int current_byte = 0, cip_cnt = 0, cip_i = 0;
   /* configure pins */
@@ -46,7 +54,7 @@ void setup(){
 
   IPAddress ip = Ethernet.localIP();
 
-  /* set the current ip */
+  /* calculates and sets the current ip */
   for (i = 0; i < 4; i++){
     current_byte = ip[i];
     if(current_byte > 99){ 
@@ -80,26 +88,36 @@ void setup(){
   server.begin();
 }
 
+/* poor man's exit */
 void exit(){
   Serial.println("EXIT");
   while(true);
 }
 
+/* This function is monolitical only for one particular reason: If I create
+  new functions in my current development setup based on the Arduino-Ehternet
+  board, the code does strange things. I think the reason for this behaviour
+  is the limited stack or RAM size, but I surely am not very confident about that.
+  
+  If you have a deeper knowledge of embedded systems or 
+  know one plausible causal chain of my problem,
+  please let me know! ;) */
 void loop(){
   /* like the accept() library function from the BSD-Socketlib */
   EthernetClient client = server.available();
 
+  /* client dispatch */
   if(client){
-    char path[43]; /* client dispatching */
+    char path[43]; /* will contain the path part of the url */
 
-    /* setting buf to the request line */
+    /* set buf to the request line */
     get_line(client);
 
     if (buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf [4] == '/'){
       i = 5;
       char temp;
 
-      /* Get the Path of the request */
+      /* Get the path of the request */
       while ((temp = buf[i]) != ' '){
         path[i-5] = temp;
         i++;
@@ -110,38 +128,38 @@ void loop(){
     Serial.print("[server] path: /");
     Serial.println(path);
 
+    /* digests the path */
     if(path[0] == '\0'){
       Serial.println("[server] sending index ...");
       /* static content */
       client.println("HTTP/1.1 200 OK\n");
       send_webpage(client);
-    } 
-    else if (path[0] == 'm') {
+    } else if (path[0] == 'm') {
       Serial.println("[server] sending css ...");
 
       client.print("HTTP/1.1 200 OK\n");
       client.println("Content-Type: text/css; charset=iso-8859-1\n");
       send_css(client);
-    } 
-    else if (path[0] == 's') {
+    } else if (path[0] == 's') {
       Serial.println("[server] sending status page ...");
       client.println("HTTP/1.1 200 OK\n");
       send_status(client);
-
-    } 
-    else if (path[0] == 'q' && path[1] == '?') {
+    } else if (path[0] == 'q' && path[1] == '?') {
       i = 2;
       byte state, led, t, k;
 
       Serial.println("[server] Start parsing HTTP query string ...");
 
-      /* note that only case '1' and case '0' contain the continue statement
-       This is used to control the code block after the switch case statement */
+      /* Please note that only the blocks for case '1', case '0', case 's' and case 't' 
+        contain the continue statement. This is because only in these cases
+        the code following the switch-case-block should be executed */
       while ((t = path[i++]) != '\0'){
         switch(t){
+        /* eat up variable prefix L */
         case 'L':
           continue;
           break;
+        /* led codes */
         case 'a':
           led = 0; 
           continue;
@@ -183,9 +201,10 @@ void loop(){
           continue;
           break;
         case 'A':
-          led = 100;
+          led = 'A';
           continue;
           break;
+        /* action codes */
         case '0':
           state = LOW; 
           break;
@@ -196,19 +215,28 @@ void loop(){
         case 't':
           state = 't';
           break;
+        /* s is the code for: "please give me status" */
+        case 's':
+          state = 's';
+          break;
         default:
           continue;
           break;
         }
 
-        if(led == 100){
+        if(led == 'A'){
           for(k=0; k<portnum; k++){
             /* decide if the "toggle mode" is switched on */
             if(state == 't'){
               status[k] = !status[k];
               digitalWrite(k, status[k]);
-            } 
-            else {
+              
+            /* just send all states to the client (csv) */
+            } else if (state == 's'){
+              client.println("HTTP/1.1 200 OK\n");
+              client.print(status[k]);
+              client.print(',');
+            } else {
               digitalWrite(k, state);
               status[k] = state;
             }
@@ -217,24 +245,33 @@ void loop(){
           if(state == 't'){
             status[led] = !status[led];
             digitalWrite(led, status[led]);
-          } 
-          else {
+          } else if (state == 's') {
+            client.println("HTTP/1.1 200 OK\n");
+            client.print(status[led]);
+            /* append a ',' (for csv) but only if 
+              the current command isn't the last one */
+            if(path[i] != '\0'){
+              client.print(',');
+            }
+            
+          } else {
             digitalWrite(led, state);
             status[led] = state == HIGH ? 1 : 0;
           }
         }
       }
-    } 
-    else {
-
+      
+    /* Just normal URL-toggling. E.g.: 
+      http://<ip>/j<arbitrary_string> => toggles 
+      socket nr. 9 */
+    } else {
       for (i = 0; i < portnum; i++){
         if(path[0] == ports[i]){
           /* Port found! */
 
           if(status[i]){
             digitalWrite(i, LOW);
-          } 
-          else {
+          } else {
             digitalWrite(i, HIGH);
           }
 
@@ -255,6 +292,7 @@ void loop(){
   }
 }
 
+/* queries just one line sent by the client */
 void get_line(EthernetClient c){
   i = 0;
   char temp;
