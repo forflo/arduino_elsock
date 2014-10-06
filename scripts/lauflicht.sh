@@ -1,13 +1,10 @@
 #!/bin/bash
+HOST="http://141.60.125.177"
 
 while :; do
-	curl http://141.60.125.177/9 > /dev/null 2>&1
-	echo toggle 9
-	sleep 0.1
-	curl http://141.60.125.177/8 > /dev/null 2>&1
-	echo toggle 8
-	sleep 0.1
-	curl http://141.60.125.177/7 > /dev/null 2>&1
-	echo toggle 7
-	sleep 0.1
+	for i in {a..j}; do
+	echo Toggle $i
+	curl ${HOST}/$i > /dev/null 2>&1
+	sleep 0.2
+	done
 done
