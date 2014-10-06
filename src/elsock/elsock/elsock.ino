@@ -149,6 +149,7 @@ void loop(){
       byte state, led, t, k;
 
       Serial.println("[server] Start parsing HTTP query string ...");
+      client.println("HTTP/1.1 200 OK\n");
 
       /* Please note that only the blocks for case '1', case '0', case 's' and case 't' 
         contain the continue statement. This is because only in these cases
@@ -233,7 +234,6 @@ void loop(){
               
             /* just send all states to the client (csv) */
             } else if (state == 's'){
-              client.println("HTTP/1.1 200 OK\n");
               client.print(status[k]);
               client.print(',');
             } else {
@@ -246,7 +246,6 @@ void loop(){
             status[led] = !status[led];
             digitalWrite(led, status[led]);
           } else if (state == 's') {
-            client.println("HTTP/1.1 200 OK\n");
             client.print(status[led]);
             /* append a ',' (for csv) but only if 
               the current command isn't the last one */
