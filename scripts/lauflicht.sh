@@ -2,10 +2,11 @@
 HOST="http://141.60.125.177"
 
 while :; do
-	temp=""
+	temp="j"
 	for i in {c..j}; do
-		curl ${HOST}/p?L$temp=0"&"L$i=1 > /dev/null 
-		temp="c"
-		sleep 0.2
+		echo $i on
+		curl "${HOST}/q?L$temp=0&L$i=1" > /dev/null 2>&1
+		echo $temp off
+		temp=$i
 	done
 done
