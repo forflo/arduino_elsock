@@ -11,8 +11,9 @@ http://piratepad.net/UFnN9QiHeK
 
 Persons
 =======
-* forflo
-* serafis
+* forflo (Arduino Code, Hardware, Testing)
+* serafis (provided early HTML and CSS sources)
+* BM (C++ Client)
 
 Directory structure
 ===================
