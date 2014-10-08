@@ -10,8 +10,7 @@ char ports[] = {
 byte status[] = {
   0, 0, 0, 
   0, 0, 0, 
-  0, 0, 0, 
-  0
+  0, 0, 0, 0
 };
 
 byte portnum = 10;
@@ -25,7 +24,7 @@ byte mac[] = {
 char buf[60];
 
 IPAddress ip;
-String current_ip;
+char current_ip[16];
 EthernetServer server(80);
 
 void setup(){
@@ -47,12 +46,13 @@ void setup(){
 	ip = Ethernet.localIP();
 
 	/* set the current ip */
-	current_ip.reserve(16);
-	current_ip = "";
 	for (i = 0; i < 4; i++){
-		current_ip += ip[i];
-		if (i != 3) {
-			current_ip += ".";
+		byte t = ip[i];
+		while(t != 0) {
+			
+			if (i != 3) {
+				current_ip += ".";
+			}
 		}
 	}
 
