@@ -249,9 +249,8 @@ void loop(){
             client.print(status[led]);
             /* append a ',' (for csv) but only if 
               the current command isn't the last one */
-            if(path[i] != '\0'){
-              client.print(',');
-            }
+            client.print(',');
+            
             
           } else {
             digitalWrite(led, state);
