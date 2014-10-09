@@ -27,8 +27,6 @@ byte i;
 char buf[60];
 char current_ip[16];
 
-IPAddress ip;
-char current_ip[16];
 /* Arduino will listen on port 80 */
 EthernetServer server(80);
 
