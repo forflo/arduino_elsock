@@ -27,7 +27,12 @@ byte i;
 char buf[60];
 char current_ip[16];
 
+<<<<<<< HEAD
+IPAddress ip;
+char current_ip[16];
+=======
 /* Arduino will listen on port 80 */
+>>>>>>> 8b7f9498eba9e5a6bc820c763bc1e00f0b047dd8
 EthernetServer server(80);
 
 /* This function configures the
@@ -36,6 +41,40 @@ EthernetServer server(80);
   - the network stack (using dhcp)
   - and sets the global variable current ip */
 void setup(){
+<<<<<<< HEAD
+	/* configure pins */
+	for(i = 0; i < portnum; i++){
+		pinMode(i, OUTPUT);
+	}
+
+	/* configure the serial connection */
+	Serial.begin(9600);
+
+	/* Ethernet config */
+	Serial.println("[setup()] Trying to query configuration by using DHCP");
+	if (Ethernet.begin(mac) == 0){
+		Serial.println("[setup()] Failed to get DHCP-IP address");
+		exit();
+	}
+
+	ip = Ethernet.localIP();
+
+	/* set the current ip */
+	for (i = 0; i < 4; i++){
+		byte t = ip[i];
+		while(t != 0) {
+			
+			if (i != 3) {
+				current_ip += ".";
+			}
+		}
+	}
+
+	Serial.print("[setup()] current IP: ");
+	Serial.println(current_ip);
+
+	server.begin();
+=======
   int current_byte = 0, cip_cnt = 0, cip_i = 0;
   /* configure pins */
   for(i = 0; i < portnum; i++){
@@ -86,6 +125,7 @@ void setup(){
   Serial.println(current_ip);
 
   server.begin();
+>>>>>>> 8b7f9498eba9e5a6bc820c763bc1e00f0b047dd8
 }
 
 /* poor man's exit */

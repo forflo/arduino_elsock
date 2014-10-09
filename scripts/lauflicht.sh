@@ -1,4 +1,5 @@
-﻿#!/bin/bash
+<<<<<<< HEAD
+#!/bin/bash
 HOST="http://141.60.125.177"
 
 while :; do
