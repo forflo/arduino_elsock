@@ -314,7 +314,7 @@ void send_status(EthernetClient c){
 
   c.print("<body>");
 
-  /* Dynamic content */
+  /* "Dynamic content" */
   for (i = 1; i < 10; i++){
     c.print("<p class=\"button-link\"");
 
@@ -365,7 +365,7 @@ void send_webpage(EthernetClient c){
   c.print("<body>\n<h2>Toggle the state of the ports by pressing the buttons below");
   c.print("</h2>\n<br><br>\n<p>");
 
-  /* Dynamic content */
+  /* "Dynamic content" */
   for (i = 1; i < 10; i++){
     c.print("<a class=\"button-link\" href=\"");
     c.print("http://");
